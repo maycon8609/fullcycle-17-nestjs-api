@@ -37,3 +37,34 @@ Content-Type: application/json
 DELETE http://localhost:3000/products/{id} HTTP/1.1
 Host: localhost:3000
 Content-Type: application/json
+
+
+# Orders routes
+### Get all orders
+GET http://localhost:3000/orders HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+### Get a Order
+GET http://localhost:3000/orders/{id} HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+### Create a order
+POST http://localhost:3000/orders HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "product_id": "3d26779c-1d96-4629-8b7d-bf148d9bf935",
+      "quantity": 3
+    },
+    {
+      "product_id": "42e472ae-8b2c-4a3e-920f-158f7353666f",
+      "quantity": 2
+    }
+  ],
+  "card_hash": "123"
+}
