@@ -8,6 +8,7 @@ import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
 import { Product } from './products/entities/product.entity';
 
+import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
 
@@ -25,6 +26,7 @@ import { ProductsModule } from './products/products.module';
       synchronize: true,
       logging: true,
     }),
+    AuthModule,
     OrdersModule,
     ProductsModule,
   ],
