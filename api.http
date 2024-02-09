@@ -54,16 +54,19 @@ Content-Type: application/json
 ### Get all orders
 GET http://localhost:3000/orders HTTP/1.1
 Host: localhost:3000
+Authorization: Bearer {access_token}
 Content-Type: application/json
 
 ### Get a Order
 GET http://localhost:3000/orders/{id} HTTP/1.1
 Host: localhost:3000
+Authorization: Bearer {access_token}
 Content-Type: application/json
 
 ### Create a order
 POST http://localhost:3000/orders HTTP/1.1
 Host: localhost:3000
+Authorization: Bearer {access_token}
 Content-Type: application/json
 
 {
