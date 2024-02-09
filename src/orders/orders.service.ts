@@ -1,42 +1,42 @@
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { In, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
-import { Product } from 'src/products/entities/product.entity';
+import { Product } from '../products/entities/product.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
-    @InjectRepository(Order) private orderRepository: Repository<Order>,
-    @InjectRepository(Product) private productRepository: Repository<Product>,
+    @InjectRepository(Order) private orderRepo: Repository<Order>,
+    @InjectRepository(Product) private productRepo: Repository<Product>,
+    private amqpConnection: AmqpConnection,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto) {
+  async create(createOrderDto: CreateOrderDto & { client_id: number }) {
     const productIds = createOrderDto.items.map((item) => item.product_id);
     const uniqueProductIds = [...new Set(productIds)];
-
-    const products = await this.productRepository.findBy({
+    const products = await this.productRepo.findBy({
       id: In(uniqueProductIds),
     });
 
     if (products.length !== uniqueProductIds.length) {
       throw new Error(
         `
-          Algum produto não existe, Produtos informados ${productIds},\n
+          Algum produto não existe. Produtos passados ${productIds},\n
           produtos encontrados ${products.map((product) => product.id)}
         `,
       );
     }
 
     const order = Order.create({
-      client_id: 1,
+      client_id: createOrderDto.client_id,
       items: createOrderDto.items.map((item) => {
         const product = products.find(
           (product) => product.id === item.product_id,
         );
-
         return {
           price: product.price,
           product_id: item.product_id,
@@ -44,18 +44,55 @@ export class OrdersService {
         };
       }),
     });
+    await this.orderRepo.save(order);
+    await this.amqpConnection.publish('amq.direct', 'OrderCreated', {
+      order_id: order.id,
+      card_hash: createOrderDto.card_hash,
+      total: order.total,
+    });
 
-    await this.orderRepository.save(order);
     return order;
   }
 
-  findAll() {
-    return this.orderRepository.find();
+  findAll(client_id: number) {
+    return this.orderRepo.find({
+      where: {
+        client_id,
+      },
+      order: {
+        created_at: 'DESC',
+      },
+    });
   }
 
-  findOne(id: string) {
-    return this.orderRepository.findOne({
-      where: { id },
+  findOne(id: string, client_id: number) {
+    return this.orderRepo.findOneByOrFail({
+      id,
+      client_id,
     });
+  }
+
+  async pay(id: string) {
+    const order = await this.orderRepo.findOneByOrFail({
+      id,
+    });
+
+    order.pay();
+
+    await this.orderRepo.save(order);
+
+    return order;
+  }
+
+  async fail(id: string) {
+    const order = await this.orderRepo.findOneByOrFail({
+      id,
+    });
+
+    order.fail();
+
+    await this.orderRepo.save(order);
+
+    return order;
   }
 }

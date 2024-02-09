@@ -5,6 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+
 import { OrderItem } from './order-item.entity';
 
 export enum OrderStatus {
@@ -39,25 +40,49 @@ export class Order {
   @CreateDateColumn()
   created_at: Date;
 
-  @OneToMany(() => OrderItem, (item) => item.order, { cascade: ['insert'] })
+  @OneToMany(() => OrderItem, (item) => item.order, {
+    cascade: ['insert'],
+    eager: true,
+  })
   items: OrderItem[];
 
   static create(input: CreateOrderCommand) {
     const order = new Order();
-
     order.client_id = input.client_id;
     order.items = input.items.map((item) => {
       const orderItem = new OrderItem();
-      orderItem.price = item.price;
       orderItem.product_id = item.product_id;
       orderItem.quantity = item.quantity;
+      orderItem.price = item.price;
       return orderItem;
     });
-
     order.total = order.items.reduce((sum, item) => {
       return sum + item.price * item.quantity;
     }, 0);
-
     return order;
+  }
+
+  pay() {
+    if (this.status === OrderStatus.PAID) {
+      throw new Error('Order already paid');
+    }
+
+    if (this.status === OrderStatus.FAILED) {
+      throw new Error('Order already failed');
+    }
+
+    this.status = OrderStatus.PAID;
+  }
+
+  fail() {
+    if (this.status === OrderStatus.FAILED) {
+      throw new Error('Order already failed');
+    }
+
+    if (this.status === OrderStatus.PAID) {
+      throw new Error('Order already paid');
+    }
+
+    this.status = OrderStatus.FAILED;
   }
 }

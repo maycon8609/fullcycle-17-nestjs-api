@@ -6,13 +6,13 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Product } from 'src/products/entities/product.entity';
+import { Product } from '../../products/entities/product.entity';
 import { Order } from './order.entity';
 
 @Entity()
 export class OrderItem {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
   @Column({ type: 'int' })
   quantity: number;
@@ -20,7 +20,7 @@ export class OrderItem {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-  @ManyToOne(() => Product)
+  @ManyToOne(() => Product, { eager: true })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
